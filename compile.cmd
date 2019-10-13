@@ -1,1 +1,1 @@
-go install github.com/blue-jmmq/battle
+go install github.com/blue-jmmq/GameTheGame
