@@ -1,0 +1,1 @@
+GameTheGame.exe > log.txt 2>&1
