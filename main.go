@@ -11,33 +11,16 @@ import (
 //Integer type
 type Integer int
 
-//Weapon structure
-type Weapon struct {
-	Hands Integer
-	Power Integer
+//Card structure
+type Card struct {
+	Name           []rune
+	OffensivePower Integer
+	DefensivePower Integer
+	Cost           Integer
 }
 
-//Armor structure
-type Armor struct {
-	Head Integer
-	Body Integer
-	Legs Integer
-}
-
-//Shield structure
-type Shield struct {
-	Power Integer
-}
-
-//Figther structure
-type Figther struct {
-	Name   string
-	ID     Integer
-	Health Integer
-	Armor  Armor
-	Weapon Weapon
-	Shield Shield
-}
+//WarriorCard variable
+var WarriorCard Card = Card{Name: []rune("Warrior"), OffensivePower: 1, DefensivePower: 1, Cost: 1}
 
 //StructToJSON function
 func StructToJSON(structure interface{}) string {
@@ -210,24 +193,28 @@ func (inputWidget *InputWidget) GetVisualArray() [][]rune {
 	var emptyRow []rune
 	var index Integer
 	for index = 0; index < inputWidget.Width; index++ {
-		emptyRow = append(emptyRow, '-')
+		emptyRow = append(emptyRow, '█')
 	}
 	array = append(array, emptyRow)
 
 	var inputRow []rune
-	inputRow = append(inputRow, 'λ', ' ')
-	if Integer(len(inputWidget.Line))+Integer(len(inputRow)) <= inputWidget.Width {
+	inputRow = append(inputRow, '█', ' ', 'λ', ' ')
+	if Integer(len(inputWidget.Line))+Integer(len(inputRow))+1 <= inputWidget.Width {
 		inputRow = append(inputRow, inputWidget.Line...)
+		for index = Integer(len(inputRow)); index < inputWidget.Width-1; index++ {
+			inputRow = append(inputRow, ' ')
+		}
 	} else {
-		for index = inputWidget.Index; index < inputWidget.Index+inputWidget.Width; index++ {
+		for index = inputWidget.Index; index < inputWidget.Index+inputWidget.Width-1; index++ {
 			inputRow = append(inputRow, inputWidget.Line[index])
 		}
 	}
+	inputRow = append(inputRow, '█')
 	array = append(array, inputRow)
 
 	var emptyRow2 []rune
 	for index = 0; index < inputWidget.Width; index++ {
-		emptyRow2 = append(emptyRow2, '-')
+		emptyRow2 = append(emptyRow2, '█')
 	}
 	array = append(array, emptyRow2)
 
