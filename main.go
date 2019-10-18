@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/gdamore/tcell"
 )
@@ -46,7 +47,7 @@ func PrettyPrint(structure interface{}) {
 
 //PrettyLog function
 func PrettyLog(structure interface{}) {
-	fo, err := os.OpenFile("text.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	fo, err := os.OpenFile("output.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
 	}
@@ -57,6 +58,9 @@ func PrettyLog(structure interface{}) {
 		}
 	}()
 	if _, err := fo.WriteString(StructToJSONPretty(structure)); err != nil {
+		panic(err)
+	}
+	if _, err := fo.WriteString("\n"); err != nil {
 		panic(err)
 	}
 }
@@ -180,11 +184,12 @@ func (bufferWidget *BufferWidget) GetDrawableLines(line []rune) [][]rune {
 
 //InputWidget struct
 type InputWidget struct {
-	Line        []rune
-	VisualArray [][]rune
-	Width       Integer
-	Height      Integer
-	Index       Integer
+	Line            []rune
+	VisualArray     [][]rune
+	Width           Integer
+	Height          Integer
+	Index           Integer
+	shouldDrawIndex bool
 }
 
 //NewInputWidget function creates a new InputWidget
@@ -192,6 +197,33 @@ func NewInputWidget() *InputWidget {
 	var inputWidget InputWidget
 	inputWidget.Line = make([]rune, 0)
 	return &inputWidget
+}
+
+//ScrollLeft function
+func (inputWidget *InputWidget) ScrollLeft() {
+	if inputWidget.Index > 0 {
+		inputWidget.Index--
+	}
+}
+
+//ScrollRight function
+func (inputWidget *InputWidget) ScrollRight() {
+	if inputWidget.Index < Integer(len(inputWidget.Line)) {
+		inputWidget.Index++
+	}
+}
+
+//Tick function
+func (inputWidget *InputWidget) Tick() {
+	inputWidget.shouldDrawIndex = !inputWidget.shouldDrawIndex
+	//PrettyLog(inputWidget.shouldDrawIndex)
+}
+
+//Typed function
+func (inputWidget *InputWidget) Typed(r rune) {
+	PrettyLog(fmt.Sprint("Typed rune: ", r, ", ", string(r)))
+	inputWidget.Line = append(inputWidget.Line, r)
+	inputWidget.Index++
 }
 
 //UpdateSize function
@@ -211,34 +243,99 @@ func (inputWidget *InputWidget) Update(width, height Integer) {
 	inputWidget.VisualArray = inputWidget.GetVisualArray()
 }
 
+//IsLineSmall function
+func (inputWidget *InputWidget) IsLineSmall(nRunesAvailable Integer) bool {
+	return Integer(len(inputWidget.Line)) < nRunesAvailable
+}
+
+//IsLinePerfect function
+func (inputWidget *InputWidget) IsLinePerfect(nRunesAvailable Integer) bool {
+	return Integer(len(inputWidget.Line)) == nRunesAvailable
+}
+
+//LineIsPerfect function
+func (inputWidget *InputWidget) LineIsPerfect(inputRow *[]rune) {
+	var index Integer
+	if inputWidget.Index == Integer(len(inputWidget.Line)) {
+		for index = 1; index < Integer(len(inputWidget.Line)); index++ {
+			*inputRow = append(*inputRow, inputWidget.Line[index])
+		}
+		if inputWidget.shouldDrawIndex {
+			*inputRow = append(*inputRow, '█')
+		}
+	} else {
+		inputWidget.LineIsSmall(inputRow)
+	}
+}
+
+//LineIsSmall function
+func (inputWidget *InputWidget) LineIsSmall(inputRow *[]rune) {
+	var index Integer
+	for index = 0; index < Integer(len(inputWidget.Line)); index++ {
+		if inputWidget.shouldDrawIndex && index == inputWidget.Index {
+			*inputRow = append(*inputRow, '█')
+		} else {
+			*inputRow = append(*inputRow, inputWidget.Line[index])
+		}
+	}
+	if inputWidget.shouldDrawIndex && index == inputWidget.Index {
+		*inputRow = append(*inputRow, '█')
+	}
+}
+
+//LineIsBig function
+func (inputWidget *InputWidget) LineIsBig(inputRow *[]rune, nRunesAvailable Integer) {
+	var index Integer
+	if inputWidget.Index < nRunesAvailable {
+		for index = 0; index < nRunesAvailable; index++ {
+			if inputWidget.shouldDrawIndex && index == inputWidget.Index {
+				*inputRow = append(*inputRow, '█')
+			} else {
+				*inputRow = append(*inputRow, inputWidget.Line[index])
+			}
+		}
+	} else {
+		for index = inputWidget.Index - nRunesAvailable + 1; index < inputWidget.Index; index++ {
+			*inputRow = append(*inputRow, inputWidget.Line[index])
+		}
+		if inputWidget.shouldDrawIndex {
+			*inputRow = append(*inputRow, '█')
+		} else if index < Integer(len(inputWidget.Line)) {
+			*inputRow = append(*inputRow, inputWidget.Line[index])
+		}
+	}
+}
+
 //GetVisualArray function
 func (inputWidget *InputWidget) GetVisualArray() [][]rune {
 	var array [][]rune
 	var emptyRow []rune
 	var index Integer
 	for index = 0; index < inputWidget.Width; index++ {
-		emptyRow = append(emptyRow, '█')
+		emptyRow = append(emptyRow, '-')
 	}
 	array = append(array, emptyRow)
 
 	var inputRow []rune
-	inputRow = append(inputRow, '█', ' ', 'λ', ' ')
-	if Integer(len(inputWidget.Line))+Integer(len(inputRow))+1 <= inputWidget.Width {
-		inputRow = append(inputRow, inputWidget.Line...)
-		for index = Integer(len(inputRow)); index < inputWidget.Width-1; index++ {
-			inputRow = append(inputRow, ' ')
-		}
+	inputRow = append(inputRow, 'λ', ' ')
+	nConstantRunes := Integer(len(inputRow))
+	nRunesAvailable := inputWidget.Width - nConstantRunes
+	if inputWidget.IsLinePerfect(nRunesAvailable){
+		inputWidget.LineIsPerfect(&inputRow)
 	} else {
-		for index = inputWidget.Index; index < inputWidget.Index+inputWidget.Width-1; index++ {
-			inputRow = append(inputRow, inputWidget.Line[index])
+		if inputWidget.IsLineSmall(nRunesAvailable) {
+			inputWidget.LineIsSmall(&inputRow)
+		} else {
+			inputWidget.LineIsBig(&inputRow, nRunesAvailable)
 		}
 	}
-	inputRow = append(inputRow, '█')
+	
+	//inputRow = append(inputRow, '█')
 	array = append(array, inputRow)
 
 	var emptyRow2 []rune
 	for index = 0; index < inputWidget.Width; index++ {
-		emptyRow2 = append(emptyRow2, '█')
+		emptyRow2 = append(emptyRow2, '-')
 	}
 	array = append(array, emptyRow2)
 
@@ -360,6 +457,12 @@ func (internal *Internal) GetScreenSize() (Integer, Integer) {
 	return Integer(width), Integer(height)
 }
 
+//Tick function
+func (internal *Internal) Tick() {
+	internal.UI.InputWidget.Tick()
+	internal.UpdateScreen()
+}
+
 //InternalLoop handles TCell logic
 func InternalLoop(ui *UI) {
 	screen, err := tcell.NewScreen()
@@ -379,6 +482,16 @@ func InternalLoop(ui *UI) {
 	internal.Screen.Clear()
 	internal.UpdateScreen()
 
+	ticker := time.NewTicker(500 * time.Millisecond)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				//PrettyLog(fmt.Sprint("Tick at", t))
+				internal.Tick()
+			}
+		}
+	}()
 loop:
 	for {
 		event := internal.Screen.PollEvent()
@@ -395,6 +508,18 @@ loop:
 				PrettyLog("tcell.KeyDown")
 				internal.UI.BufferWidget.ScrollDown()
 				internal.UpdateScreen()
+			case tcell.KeyLeft:
+				PrettyLog("tcell.KeyLeft")
+				internal.UI.InputWidget.ScrollLeft()
+				internal.UpdateScreen()
+			case tcell.KeyRight:
+				PrettyLog("tcell.KeyRight")
+				internal.UI.InputWidget.ScrollRight()
+				internal.UpdateScreen()
+			case tcell.KeyRune:
+				internal.UI.InputWidget.Typed(event.Rune())
+				internal.UpdateScreen()
+
 			}
 			//fmt.Println(width, height)
 		case *tcell.EventResize:

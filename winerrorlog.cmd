@@ -1,1 +1,1 @@
-GameTheGame.exe > log.txt 2>&1
+GameTheGame.exe > error.log 2>&1
