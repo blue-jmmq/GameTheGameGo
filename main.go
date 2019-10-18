@@ -67,6 +67,7 @@ type BufferWidget struct {
 	VisualArray [][]rune
 	Width       Integer
 	Height      Integer
+	Index       Integer
 }
 
 //NewBufferWidget function creates a new BufferWidget
@@ -82,6 +83,21 @@ func (bufferWidget *BufferWidget) UpdateSize(width, height Integer) {
 	bufferWidget.Height = height
 }
 
+//ScrollDown function
+func (bufferWidget *BufferWidget) ScrollDown() {
+	lenght := bufferWidget.GetFullVisualArraySize()
+	if bufferWidget.Index < lenght {
+		bufferWidget.Index++
+	}
+}
+
+//ScrollUp function
+func (bufferWidget *BufferWidget) ScrollUp() {
+	if bufferWidget.Index > 0 {
+		bufferWidget.Index--
+	}
+}
+
 //GetSize function
 func (bufferWidget *BufferWidget) GetSize() (Integer, Integer) {
 	return bufferWidget.Width, bufferWidget.Height
@@ -93,26 +109,34 @@ func (bufferWidget *BufferWidget) Update(width, height Integer) {
 	bufferWidget.VisualArray = bufferWidget.GetVisualArray()
 }
 
-//GetVisualArray function
-func (bufferWidget *BufferWidget) GetVisualArray() [][]rune {
+//GetFullVisualArraySize function
+func (bufferWidget *BufferWidget) GetFullVisualArraySize() Integer {
+	fullArray := bufferWidget.GetFullVisualArray()
+	return Integer(len(fullArray))
+}
+
+//GetFullVisualArray function
+func (bufferWidget *BufferWidget) GetFullVisualArray() [][]rune {
 	var array [][]rune
 	lines := bufferWidget.Lines
 	for _, line := range lines {
 		drawableLines := bufferWidget.GetDrawableLines(line)
 		for _, drawableLine := range drawableLines {
-			if Integer(len(array)) < bufferWidget.Height {
-				array = append(array, drawableLine)
-			} else {
-				return array
-			}
+			array = append(array, drawableLine)
 		}
-		if Integer(len(array)) < bufferWidget.Height {
-			array = append(array, []rune{'↓'})
-		} else {
-			return array
-		}
+		array = append(array, []rune{'↓'})
 	}
 	return array
+}
+
+//GetVisualArray function
+func (bufferWidget *BufferWidget) GetVisualArray() [][]rune {
+	fullArray := bufferWidget.GetFullVisualArray()
+	topIndex := bufferWidget.Index + bufferWidget.Height
+	if Integer(len(fullArray)) < topIndex {
+		return fullArray[bufferWidget.Index:]
+	}
+	return fullArray[bufferWidget.Index:topIndex]
 }
 
 //GetDrawableLines function
@@ -221,30 +245,6 @@ func (inputWidget *InputWidget) GetVisualArray() [][]rune {
 	return array
 }
 
-//InputLineToVisualLine function
-func InputLineToVisualLine(line []rune, i0, width Integer) []rune {
-	var visualLine []rune
-	visualLine = append(visualLine, '█', '#', '⠀')
-	var nConstantChars Integer = 4
-	var nCharsAndBlanks Integer = width - nConstantChars
-	var nChars Integer
-	if Integer(len(line[i0:])) >= nCharsAndBlanks {
-		nChars = nCharsAndBlanks
-	} else {
-		nChars = Integer(len(line[i0:]))
-	}
-	var index Integer
-
-	for index = i0; index < nChars; index++ {
-		visualLine = append(visualLine, line[index])
-	}
-	for ; index < nCharsAndBlanks; index++ {
-		visualLine = append(visualLine, ' ')
-	}
-	visualLine = append(visualLine, '█')
-	return visualLine
-}
-
 //AppendString function
 func (bufferWidget *BufferWidget) AppendString(s string) {
 	bufferWidget.Lines = append(bufferWidget.Lines, []rune(s))
@@ -351,6 +351,7 @@ func (internal *Internal) UpdateScreen() {
 		runeArray := internal.UI.GetRuneArray()
 		internal.FillScreenFromArray(runeArray)
 	}
+	internal.Screen.Sync()
 }
 
 //GetScreenSize function
@@ -386,16 +387,17 @@ loop:
 			switch event.Key() {
 			case tcell.KeyEscape, tcell.KeyEnter:
 				break loop
-			}
-			width, height := screen.Size()
-			for y := 0; y < height; y++ {
-				for x := 0; x < width; x++ {
-					internal.Screen.SetContent(x, y, event.Rune(), nil, tcell.StyleDefault)
-				}
+			case tcell.KeyUp:
+				PrettyLog("tcell.KeyUp")
+				internal.UI.BufferWidget.ScrollUp()
+				internal.UpdateScreen()
+			case tcell.KeyDown:
+				PrettyLog("tcell.KeyDown")
+				internal.UI.BufferWidget.ScrollDown()
+				internal.UpdateScreen()
 			}
 			//fmt.Println(width, height)
 		case *tcell.EventResize:
-			internal.Screen.Sync()
 			internal.UpdateScreen()
 		}
 	}
@@ -423,6 +425,14 @@ func NewUI(bufferWidget *BufferWidget, inputWidget *InputWidget, minimumWidth, m
 
 func main() {
 	bufferWidget := NewBufferWidget()
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
 	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
 	bufferWidget.AppendString("Hello world my name is PepeThePepe and this is GameTheGame")
 	inputWidget := NewInputWidget()
