@@ -221,7 +221,7 @@ func (inputWidget *InputWidget) Tick() {
 
 //Typed function
 func (inputWidget *InputWidget) Typed(r rune) {
-	PrettyLog(fmt.Sprint("Typed rune: ", r, ", ", string(r)))
+	//PrettyLog(fmt.Sprint("Typed rune: ", r, ", ", string(r)))
 	inputWidget.Line = append(inputWidget.Line, rune(0))
 	copy(inputWidget.Line[inputWidget.Index+1:], inputWidget.Line[inputWidget.Index:])
 	inputWidget.Line[inputWidget.Index] = r
@@ -234,6 +234,7 @@ func (inputWidget *InputWidget) UpdateSize(width, height Integer) {
 	inputWidget.Height = height
 }
 
+//DeleteRune function
 func (inputWidget *InputWidget) DeleteRune() {
 	if inputWidget.Index > 0 && Integer(len(inputWidget.Line)) > 0 {
 		inputWidget.Line = append(inputWidget.Line[:inputWidget.Index-1], inputWidget.Line[inputWidget.Index:]...)
@@ -329,7 +330,7 @@ func (inputWidget *InputWidget) GetVisualArray() [][]rune {
 	inputRow = append(inputRow, 'λ', ' ')
 	nConstantRunes := Integer(len(inputRow))
 	nRunesAvailable := inputWidget.Width - nConstantRunes
-	if inputWidget.IsLinePerfect(nRunesAvailable){
+	if inputWidget.IsLinePerfect(nRunesAvailable) {
 		inputWidget.LineIsPerfect(&inputRow)
 	} else {
 		if inputWidget.IsLineSmall(nRunesAvailable) {
@@ -338,7 +339,7 @@ func (inputWidget *InputWidget) GetVisualArray() [][]rune {
 			inputWidget.LineIsBig(&inputRow, nRunesAvailable)
 		}
 	}
-	
+
 	//inputRow = append(inputRow, '█')
 	array = append(array, inputRow)
 
@@ -388,7 +389,7 @@ func (ui *UI) Update(width, height Integer) {
 type Internal struct {
 	UI     *UI
 	Screen tcell.Screen
-	Timer *time.Timer
+	Timer  *time.Timer
 }
 
 //GetScreenWidth function
@@ -544,11 +545,14 @@ loop:
 				internal.UI.InputWidget.Typed(event.Rune())
 				internal.ResetTimer()
 				internal.UpdateScreen()
-			case tcell.KeyBackspace:
+			case tcell.KeyBackspace, tcell.KeyBackspace2:
+				PrettyLog("tcell.KeyBackspace")
 				internal.UI.InputWidget.DeleteRune()
 				internal.ResetTimer()
 				internal.UpdateScreen()
 			}
+			PrettyLog(event.Key())
+			PrettyLog(event.Name())
 			//fmt.Println(width, height)
 		case *tcell.EventResize:
 			internal.UpdateScreen()
