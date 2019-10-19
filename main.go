@@ -222,7 +222,9 @@ func (inputWidget *InputWidget) Tick() {
 //Typed function
 func (inputWidget *InputWidget) Typed(r rune) {
 	PrettyLog(fmt.Sprint("Typed rune: ", r, ", ", string(r)))
-	inputWidget.Line = append(inputWidget.Line, r)
+	inputWidget.Line = append(inputWidget.Line, rune(0))
+	copy(inputWidget.Line[inputWidget.Index+1:], inputWidget.Line[inputWidget.Index:])
+	inputWidget.Line[inputWidget.Index] = r
 	inputWidget.Index++
 }
 
@@ -230,6 +232,13 @@ func (inputWidget *InputWidget) Typed(r rune) {
 func (inputWidget *InputWidget) UpdateSize(width, height Integer) {
 	inputWidget.Width = width
 	inputWidget.Height = height
+}
+
+func (inputWidget *InputWidget) DeleteRune() {
+	if inputWidget.Index > 0 && Integer(len(inputWidget.Line)) > 0 {
+		inputWidget.Line = append(inputWidget.Line[:inputWidget.Index-1], inputWidget.Line[inputWidget.Index:]...)
+		inputWidget.Index--
+	}
 }
 
 //GetSize function
@@ -379,6 +388,7 @@ func (ui *UI) Update(width, height Integer) {
 type Internal struct {
 	UI     *UI
 	Screen tcell.Screen
+	Timer *time.Timer
 }
 
 //GetScreenWidth function
@@ -459,8 +469,21 @@ func (internal *Internal) GetScreenSize() (Integer, Integer) {
 
 //Tick function
 func (internal *Internal) Tick() {
+	internal.Timer.Reset(1000 * time.Millisecond)
 	internal.UI.InputWidget.Tick()
 	internal.UpdateScreen()
+}
+
+//ResetTimer function
+func (internal *Internal) ResetTimer() {
+	internal.Timer.Reset(1000 * time.Millisecond)
+	internal.UI.InputWidget.shouldDrawIndex = true
+}
+
+//SetTimer function
+func (internal *Internal) SetTimer() {
+	internal.Timer = time.NewTimer(1000 * time.Millisecond)
+	internal.UI.InputWidget.shouldDrawIndex = true
 }
 
 //InternalLoop handles TCell logic
@@ -481,12 +504,11 @@ func InternalLoop(ui *UI) {
 	internal.UI = ui
 	internal.Screen.Clear()
 	internal.UpdateScreen()
-
-	ticker := time.NewTicker(500 * time.Millisecond)
+	internal.SetTimer()
 	go func() {
 		for {
 			select {
-			case <-ticker.C:
+			case <-internal.Timer.C:
 				//PrettyLog(fmt.Sprint("Tick at", t))
 				internal.Tick()
 			}
@@ -498,7 +520,7 @@ loop:
 		switch event := event.(type) {
 		case *tcell.EventKey:
 			switch event.Key() {
-			case tcell.KeyEscape, tcell.KeyEnter:
+			case tcell.KeyEscape:
 				break loop
 			case tcell.KeyUp:
 				PrettyLog("tcell.KeyUp")
@@ -511,15 +533,21 @@ loop:
 			case tcell.KeyLeft:
 				PrettyLog("tcell.KeyLeft")
 				internal.UI.InputWidget.ScrollLeft()
+				internal.ResetTimer()
 				internal.UpdateScreen()
 			case tcell.KeyRight:
 				PrettyLog("tcell.KeyRight")
 				internal.UI.InputWidget.ScrollRight()
+				internal.ResetTimer()
 				internal.UpdateScreen()
 			case tcell.KeyRune:
 				internal.UI.InputWidget.Typed(event.Rune())
+				internal.ResetTimer()
 				internal.UpdateScreen()
-
+			case tcell.KeyBackspace:
+				internal.UI.InputWidget.DeleteRune()
+				internal.ResetTimer()
+				internal.UpdateScreen()
 			}
 			//fmt.Println(width, height)
 		case *tcell.EventResize:
