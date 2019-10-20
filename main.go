@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gdamore/tcell"
@@ -14,14 +15,17 @@ type Integer int
 
 //Card structure
 type Card struct {
-	Name           []rune
-	OffensivePower Integer
-	DefensivePower Integer
-	Cost           Integer
+	Name       string
+	Cost       Integer
+	Health     Integer
+	RedDamage  Integer
+	BlueDamage Integer
+	RedArmor   Integer
+	BlueArmor  Integer
 }
 
 //WarriorCard variable
-var WarriorCard Card = Card{Name: []rune("Warrior"), OffensivePower: 1, DefensivePower: 1, Cost: 1}
+var WarriorCard Card = Card{Name: "Warrior", Cost: 1, RedDamage: 1, BlueDamage: 1, RedArmor: 1, BlueArmor: 1}
 
 //StructToJSON function
 func StructToJSON(structure interface{}) string {
@@ -119,17 +123,53 @@ func (bufferWidget *BufferWidget) GetFullVisualArraySize() Integer {
 	return Integer(len(fullArray))
 }
 
+//GetSeparator function
+func (bufferWidget *BufferWidget) GetSeparator() []rune {
+	var separator []rune
+	var index Integer
+	for index = 0; index < bufferWidget.Width; index++ {
+		if index == 0 {
+			separator = append(separator, tcell.RuneDArrow)
+		} else if index == bufferWidget.Width-1 {
+			separator = append(separator, tcell.RuneDArrow)
+		} else {
+			separator = append(separator, '-')
+		}
+	}
+	return separator
+}
+
 //GetFullVisualArray function
 func (bufferWidget *BufferWidget) GetFullVisualArray() [][]rune {
 	var array [][]rune
+	var separator []rune = bufferWidget.GetSeparator()
+	array = append(array, separator)
+	var bufferEntries [][][]rune
 	lines := bufferWidget.Lines
 	for _, line := range lines {
-		drawableLines := bufferWidget.GetDrawableLines(line)
-		for _, drawableLine := range drawableLines {
-			array = append(array, drawableLine)
+		//PrettyLog(string(line))
+		splittedLinesString := strings.Split(string(line), "\n")
+		//PrettyLog(splittedLinesString)
+
+		var splittedLines [][]rune
+		for _, splittedLineString := range splittedLinesString {
+			splittedLines = append(splittedLines, []rune(splittedLineString))
 		}
-		array = append(array, []rune{'↓'})
+		bufferEntries = append(bufferEntries, splittedLines)
 	}
+	//PrettyLog(bufferEntries)
+
+	for _, bufferEntry := range bufferEntries {
+		for _, line := range bufferEntry {
+			drawableLines := bufferWidget.GetDrawableLines(line)
+			for _, drawableLine := range drawableLines {
+				array = append(array, drawableLine)
+			}
+			//array = append(array, []rune{' ', ' ', ' ', tcell.RuneRArrow})
+		}
+		array = append(array, separator)
+	}
+	//PrettyLog(array)
 	return array
 }
 
@@ -146,10 +186,14 @@ func (bufferWidget *BufferWidget) GetVisualArray() [][]rune {
 //GetDrawableLines function
 func (bufferWidget *BufferWidget) GetDrawableLines(line []rune) [][]rune {
 	var drawableLines [][]rune
-	if Integer(len(line)) <= bufferWidget.Width {
-		lineCopy := make([]rune, len(line))
-		copy(lineCopy, line)
-		drawableLines = append(drawableLines, lineCopy)
+	preLine := []rune{' ', ' ', ' ', ' '}
+	preLineSize := Integer(len(preLine))
+	if Integer(len(line)) <= bufferWidget.Width-preLineSize {
+		var drawableLine []rune
+		drawableLine = append(drawableLine, preLine...)
+		drawableLine = append(drawableLine, line...)
+		//PrettyLog(dra)
+		drawableLines = append(drawableLines, drawableLine)
 	} else {
 		var index Integer = 0
 	a:
@@ -157,14 +201,8 @@ func (bufferWidget *BufferWidget) GetDrawableLines(line []rune) [][]rune {
 			var drawableLine []rune
 			var dlIndex Integer
 			var initialIndex Integer
-			if index > 0 {
-				initialIndex = 4
-				for n := 0; n < 4; n++ {
-					drawableLine = append(drawableLine, '→')
-				}
-			} else {
-				initialIndex = 0
-			}
+			drawableLine = append(drawableLine, preLine...)
+			initialIndex = preLineSize
 		b:
 			for dlIndex = initialIndex; dlIndex < bufferWidget.Width; dlIndex++ {
 				drawableLine = append(drawableLine, line[index])
@@ -524,20 +562,20 @@ loop:
 			case tcell.KeyEscape:
 				break loop
 			case tcell.KeyUp:
-				PrettyLog("tcell.KeyUp")
+				//PrettyLog("tcell.KeyUp")
 				internal.UI.BufferWidget.ScrollUp()
 				internal.UpdateScreen()
 			case tcell.KeyDown:
-				PrettyLog("tcell.KeyDown")
+				//PrettyLog("tcell.KeyDown")
 				internal.UI.BufferWidget.ScrollDown()
 				internal.UpdateScreen()
 			case tcell.KeyLeft:
-				PrettyLog("tcell.KeyLeft")
+				//PrettyLog("tcell.KeyLeft")
 				internal.UI.InputWidget.ScrollLeft()
 				internal.ResetTimer()
 				internal.UpdateScreen()
 			case tcell.KeyRight:
-				PrettyLog("tcell.KeyRight")
+				//PrettyLog("tcell.KeyRight")
 				internal.UI.InputWidget.ScrollRight()
 				internal.ResetTimer()
 				internal.UpdateScreen()
@@ -546,13 +584,13 @@ loop:
 				internal.ResetTimer()
 				internal.UpdateScreen()
 			case tcell.KeyBackspace, tcell.KeyBackspace2:
-				PrettyLog("tcell.KeyBackspace")
+				//PrettyLog("tcell.KeyBackspace")
 				internal.UI.InputWidget.DeleteRune()
 				internal.ResetTimer()
 				internal.UpdateScreen()
 			}
-			PrettyLog(event.Key())
-			PrettyLog(event.Name())
+			//PrettyLog(event.Key())
+			//PrettyLog(event.Name())
 			//fmt.Println(width, height)
 		case *tcell.EventResize:
 			internal.UpdateScreen()
@@ -581,17 +619,11 @@ func NewUI(bufferWidget *BufferWidget, inputWidget *InputWidget, minimumWidth, m
 }
 
 func main() {
+	PrettyLog(WarriorCard)
 	bufferWidget := NewBufferWidget()
 	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
 	bufferWidget.AppendString("Hello world my name is PepeThePepe and this is GameTheGame")
+	bufferWidget.AppendString(StructToJSONPretty(WarriorCard))
 	inputWidget := NewInputWidget()
 	ui := NewUI(bufferWidget, inputWidget, 16, 8)
 	//PrintStructPretty(bufferWidget)
