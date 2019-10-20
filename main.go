@@ -10,22 +10,66 @@ import (
 	"github.com/gdamore/tcell"
 )
 
+type Server struct {
+}
+
 //Integer type
 type Integer int
 
-//Card structure
-type Card struct {
-	Name       string
-	Cost       Integer
-	Health     Integer
-	RedDamage  Integer
-	BlueDamage Integer
-	RedArmor   Integer
-	BlueArmor  Integer
+//StatisticsPerLevel structure
+type StatisticsPerLevel struct {
+	CostPerLevel      Integer
+	HealthPerLevel    Integer
+	RedArmorPerLever  Integer
+	BlueArmorPerLevel Integer
 }
 
-//WarriorCard variable
-var WarriorCard Card = Card{Name: "Warrior", Cost: 1, RedDamage: 1, BlueDamage: 1, RedArmor: 1, BlueArmor: 1}
+//Card structure
+type Card struct {
+	Name               string
+	Cost               Integer
+	Health             Integer
+	RedArmor           Integer
+	BlueArmor          Integer
+	RedDamage          Integer
+	BlueDamage         Integer
+	AntiAttackSpeed    Integer
+	Level              Integer
+	Experience         Integer
+	StatisticsPerLevel *StatisticsPerLevel
+}
+
+//NewWarriorCard creates a Warrior Card
+func NewWarriorCard() *Card {
+	return &Card{
+		Name:            "Warrior",
+		Cost:            1,
+		RedDamage:       1,
+		BlueDamage:      1,
+		RedArmor:        2,
+		BlueArmor:       1,
+		AntiAttackSpeed: 4,
+		Level:           1,
+		Experience:      0,
+		StatisticsPerLevel: &StatisticsPerLevel{
+			CostPerLevel:      1,
+			HealthPerLevel:    1,
+			RedArmorPerLever:  2,
+			BlueArmorPerLevel: 1,
+		},
+	}
+}
+
+//Player structure
+type Player struct {
+	Health   Integer
+	RedArmor Integer
+	Energy   Integer
+	Credit   Integer
+	Deck     []Card
+	Hand     []Card
+	Board    [][]Card
+}
 
 //StructToJSON function
 func StructToJSON(structure interface{}) string {
@@ -103,6 +147,14 @@ func (bufferWidget *BufferWidget) ScrollDown() {
 func (bufferWidget *BufferWidget) ScrollUp() {
 	if bufferWidget.Index > 0 {
 		bufferWidget.Index--
+	}
+}
+
+//UpdateIndex function
+func (bufferWidget *BufferWidget) UpdateIndex() {
+	visualSize := bufferWidget.GetFullVisualArraySize()
+	if visualSize >= bufferWidget.Height {
+		bufferWidget.Index = visualSize - bufferWidget.Height
 	}
 }
 
@@ -249,6 +301,12 @@ func (inputWidget *InputWidget) ScrollRight() {
 	if inputWidget.Index < Integer(len(inputWidget.Line)) {
 		inputWidget.Index++
 	}
+}
+
+//Reset function
+func (inputWidget *InputWidget) Reset() {
+	inputWidget.Line = nil
+	inputWidget.Index = 0
 }
 
 //Tick function
@@ -423,46 +481,47 @@ func (ui *UI) Update(width, height Integer) {
 	ui.InputWidget.Update(ui.Width, 3)
 }
 
-//Internal structure
-type Internal struct {
-	UI     *UI
-	Screen tcell.Screen
-	Timer  *time.Timer
+//AppManager structure
+type AppManager struct {
+	UI             *UI
+	Screen         tcell.Screen
+	Timer          *time.Timer
+	CommandChannel chan []rune
 }
 
 //GetScreenWidth function
-func (internal *Internal) GetScreenWidth() Integer {
-	width, _ := internal.GetScreenSize()
+func (appManager *AppManager) GetScreenWidth() Integer {
+	width, _ := appManager.GetScreenSize()
 	return width
 }
 
 //GetScreenHeight function
-func (internal *Internal) GetScreenHeight() Integer {
-	_, height := internal.GetScreenSize()
+func (appManager *AppManager) GetScreenHeight() Integer {
+	_, height := appManager.GetScreenSize()
 	return height
 }
 
 //FillScreen function
-func (internal *Internal) FillScreen(r rune) {
-	width, height := internal.GetScreenSize()
+func (appManager *AppManager) FillScreen(r rune) {
+	width, height := appManager.GetScreenSize()
 	var y Integer
 	for y = 0; y < height; y++ {
 		var x Integer
 		for x = 0; x < width; x++ {
-			internal.Screen.SetContent(int(x), int(y), r, nil, tcell.StyleDefault)
+			appManager.Screen.SetContent(int(x), int(y), r, nil, tcell.StyleDefault)
 		}
 	}
 }
 
 //FillScreenFromArray function
-func (internal *Internal) FillScreenFromArray(array [][]rune) {
-	height := internal.GetScreenHeight()
+func (appManager *AppManager) FillScreenFromArray(array [][]rune) {
+	height := appManager.GetScreenHeight()
 	var y Integer
 	for y = 0; y < height; y++ {
 		if array[y] != nil {
 			var x Integer
 			for x = 0; x < Integer(len(array[y])); x++ {
-				internal.Screen.SetContent(int(x), int(y), array[y][x], nil, tcell.StyleDefault)
+				appManager.Screen.SetContent(int(x), int(y), array[y][x], nil, tcell.StyleDefault)
 			}
 		}
 	}
@@ -486,47 +545,80 @@ func (ui *UI) GetRuneArray() [][]rune {
 }
 
 //UpdateScreen function updates the screen
-func (internal *Internal) UpdateScreen() {
-	width, height := internal.GetScreenSize()
-	internal.Screen.Clear()
-	if (width < internal.UI.MinimumWidth) || (height < internal.UI.MinimumHeight) {
-		internal.FillScreen('X')
+func (appManager *AppManager) UpdateScreen() {
+	width, height := appManager.GetScreenSize()
+	appManager.Screen.Clear()
+	if (width < appManager.UI.MinimumWidth) || (height < appManager.UI.MinimumHeight) {
+		appManager.FillScreen('X')
 	} else {
-		internal.UI.Update(internal.GetScreenSize())
+		appManager.UI.Update(appManager.GetScreenSize())
 		//PrettyLog(internal.UI)
-		runeArray := internal.UI.GetRuneArray()
-		internal.FillScreenFromArray(runeArray)
+		runeArray := appManager.UI.GetRuneArray()
+		appManager.FillScreenFromArray(runeArray)
 	}
-	internal.Screen.Sync()
+	appManager.Screen.Sync()
 }
 
 //GetScreenSize function
-func (internal *Internal) GetScreenSize() (Integer, Integer) {
-	width, height := internal.Screen.Size()
+func (appManager *AppManager) GetScreenSize() (Integer, Integer) {
+	width, height := appManager.Screen.Size()
 	return Integer(width), Integer(height)
 }
 
 //Tick function
-func (internal *Internal) Tick() {
-	internal.Timer.Reset(1000 * time.Millisecond)
-	internal.UI.InputWidget.Tick()
-	internal.UpdateScreen()
+func (appManager *AppManager) Tick() {
+	appManager.Timer.Reset(1000 * time.Millisecond)
+	appManager.UI.InputWidget.Tick()
+	appManager.UpdateScreen()
 }
 
 //ResetTimer function
-func (internal *Internal) ResetTimer() {
-	internal.Timer.Reset(1000 * time.Millisecond)
-	internal.UI.InputWidget.shouldDrawIndex = true
+func (appManager *AppManager) ResetTimer() {
+	appManager.Timer.Reset(1000 * time.Millisecond)
+	appManager.UI.InputWidget.shouldDrawIndex = true
 }
 
 //SetTimer function
-func (internal *Internal) SetTimer() {
-	internal.Timer = time.NewTimer(1000 * time.Millisecond)
-	internal.UI.InputWidget.shouldDrawIndex = true
+func (appManager *AppManager) SetTimer() {
+	appManager.Timer = time.NewTimer(1000 * time.Millisecond)
+	appManager.UI.InputWidget.shouldDrawIndex = true
 }
 
-//InternalLoop handles TCell logic
-func InternalLoop(ui *UI) {
+//LogicLoop function
+func (appManager *AppManager) LogicLoop() {
+	for {
+		select {
+		case command := <-appManager.CommandChannel:
+			//PrettyLog(fmt.Sprint("Tick at", t))
+			appManager.WriteEntry("Command received: " + string(command))
+		}
+	}
+}
+
+//SendCommand function
+func (appManager *AppManager) SendCommand(command []rune) {
+	if len(command) > 0 {
+		commandCopy := make([]rune, len(command))
+		copy(commandCopy, command)
+		appManager.CommandChannel <- commandCopy
+	}
+
+}
+
+//SendCommandFromInput function
+func (appManager *AppManager) SendCommandFromInput() {
+	appManager.SendCommand(appManager.UI.InputWidget.Line)
+	appManager.UI.InputWidget.Reset()
+}
+
+//WriteEntry function
+func (appManager *AppManager) WriteEntry(e string) {
+	appManager.UI.BufferWidget.AppendString(e)
+	appManager.UI.BufferWidget.UpdateIndex()
+}
+
+//AppManagerLoop function
+func AppManagerLoop(ui *UI) {
 	screen, err := tcell.NewScreen()
 	if err != nil {
 		panic(err)
@@ -538,62 +630,70 @@ func InternalLoop(ui *UI) {
 	Foreground(tcell.ColorBlack).
 	Background(tcell.ColorWhite))
 	*/
-	var internal Internal
-	internal.Screen = screen
-	internal.UI = ui
-	internal.Screen.Clear()
-	internal.UpdateScreen()
-	internal.SetTimer()
+	var appManager AppManager
+	appManager.Screen = screen
+	appManager.UI = ui
+	appManager.UpdateScreen()
+	appManager.SetTimer()
+	appManager.CommandChannel = make(chan []rune)
 	go func() {
 		for {
 			select {
-			case <-internal.Timer.C:
+			case <-appManager.Timer.C:
 				//PrettyLog(fmt.Sprint("Tick at", t))
-				internal.Tick()
+				appManager.Tick()
 			}
 		}
 	}()
+	go appManager.LogicLoop()
 loop:
 	for {
-		event := internal.Screen.PollEvent()
+		event := appManager.Screen.PollEvent()
 		switch event := event.(type) {
 		case *tcell.EventKey:
 			switch event.Key() {
 			case tcell.KeyEscape:
+				//appManager.SendCommand([]rune("exit"))
 				break loop
 			case tcell.KeyUp:
 				//PrettyLog("tcell.KeyUp")
-				internal.UI.BufferWidget.ScrollUp()
-				internal.UpdateScreen()
+				appManager.UI.BufferWidget.ScrollUp()
+				appManager.UpdateScreen()
 			case tcell.KeyDown:
 				//PrettyLog("tcell.KeyDown")
-				internal.UI.BufferWidget.ScrollDown()
-				internal.UpdateScreen()
+				appManager.UI.BufferWidget.ScrollDown()
+				appManager.UpdateScreen()
 			case tcell.KeyLeft:
 				//PrettyLog("tcell.KeyLeft")
-				internal.UI.InputWidget.ScrollLeft()
-				internal.ResetTimer()
-				internal.UpdateScreen()
+				appManager.UI.InputWidget.ScrollLeft()
+				appManager.ResetTimer()
+				appManager.UpdateScreen()
 			case tcell.KeyRight:
 				//PrettyLog("tcell.KeyRight")
-				internal.UI.InputWidget.ScrollRight()
-				internal.ResetTimer()
-				internal.UpdateScreen()
+				appManager.UI.InputWidget.ScrollRight()
+				appManager.ResetTimer()
+				appManager.UpdateScreen()
 			case tcell.KeyRune:
-				internal.UI.InputWidget.Typed(event.Rune())
-				internal.ResetTimer()
-				internal.UpdateScreen()
+				appManager.UI.InputWidget.Typed(event.Rune())
+				appManager.ResetTimer()
+				appManager.UpdateScreen()
 			case tcell.KeyBackspace, tcell.KeyBackspace2:
 				//PrettyLog("tcell.KeyBackspace")
-				internal.UI.InputWidget.DeleteRune()
-				internal.ResetTimer()
-				internal.UpdateScreen()
+				appManager.UI.InputWidget.DeleteRune()
+				appManager.ResetTimer()
+				appManager.UpdateScreen()
+			case tcell.KeyEnter:
+				appManager.ResetTimer()
+				appManager.WriteEntry("tcell.KeyEnter")
+				appManager.SendCommandFromInput()
+				appManager.UpdateScreen()
+
 			}
 			//PrettyLog(event.Key())
 			//PrettyLog(event.Name())
 			//fmt.Println(width, height)
 		case *tcell.EventResize:
-			internal.UpdateScreen()
+			appManager.UpdateScreen()
 		}
 	}
 	screen.Fini()
@@ -619,13 +719,13 @@ func NewUI(bufferWidget *BufferWidget, inputWidget *InputWidget, minimumWidth, m
 }
 
 func main() {
-	PrettyLog(WarriorCard)
+	//PrettyLog(WarriorCard)
 	bufferWidget := NewBufferWidget()
 	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
 	bufferWidget.AppendString("Hello world my name is PepeThePepe and this is GameTheGame")
-	bufferWidget.AppendString(StructToJSONPretty(WarriorCard))
+	bufferWidget.AppendString(StructToJSONPretty(NewWarriorCard()))
 	inputWidget := NewInputWidget()
 	ui := NewUI(bufferWidget, inputWidget, 16, 8)
 	//PrintStructPretty(bufferWidget)
-	InternalLoop(ui)
+	AppManagerLoop(ui)
 }
