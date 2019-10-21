@@ -3,11 +3,18 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gdamore/tcell"
 	"os"
 	"strings"
+	"sync"
+	"strconv"
 	"time"
+	"net"
+)
 
-	"github.com/gdamore/tcell"
+const (
+	ServerApplication Integer = iota
+	ClientApplication
 )
 
 type Server struct {
@@ -185,7 +192,7 @@ func (bufferWidget *BufferWidget) GetSeparator() []rune {
 		} else if index == bufferWidget.Width-1 {
 			separator = append(separator, tcell.RuneDArrow)
 		} else {
-			separator = append(separator, '-')
+			separator = append(separator, tcell.RuneHLine)
 		}
 	}
 	return separator
@@ -418,12 +425,12 @@ func (inputWidget *InputWidget) GetVisualArray() [][]rune {
 	var emptyRow []rune
 	var index Integer
 	for index = 0; index < inputWidget.Width; index++ {
-		emptyRow = append(emptyRow, '-')
+		emptyRow = append(emptyRow, tcell.RuneHLine)
 	}
 	array = append(array, emptyRow)
 
 	var inputRow []rune
-	inputRow = append(inputRow, 'λ', ' ')
+	inputRow = append(inputRow, ' ', 'λ', ' ')
 	nConstantRunes := Integer(len(inputRow))
 	nRunesAvailable := inputWidget.Width - nConstantRunes
 	if inputWidget.IsLinePerfect(nRunesAvailable) {
@@ -441,7 +448,7 @@ func (inputWidget *InputWidget) GetVisualArray() [][]rune {
 
 	var emptyRow2 []rune
 	for index = 0; index < inputWidget.Width; index++ {
-		emptyRow2 = append(emptyRow2, '-')
+		emptyRow2 = append(emptyRow2, tcell.RuneHLine)
 	}
 	array = append(array, emptyRow2)
 
@@ -483,8 +490,14 @@ func (ui *UI) Update(width, height Integer) {
 
 //AppManager structure
 type AppManager struct {
+	LocalIPs []net.IP
+	ServerIP net.IP
+	ServerPort Integer
+	ServerAddress string
+	Type           Integer
 	UI             *UI
 	Screen         tcell.Screen
+	ScreenMutex    sync.Mutex
 	Timer          *time.Timer
 	CommandChannel chan []rune
 }
@@ -546,6 +559,7 @@ func (ui *UI) GetRuneArray() [][]rune {
 
 //UpdateScreen function updates the screen
 func (appManager *AppManager) UpdateScreen() {
+	appManager.ScreenMutex.Lock()
 	width, height := appManager.GetScreenSize()
 	appManager.Screen.Clear()
 	if (width < appManager.UI.MinimumWidth) || (height < appManager.UI.MinimumHeight) {
@@ -557,6 +571,7 @@ func (appManager *AppManager) UpdateScreen() {
 		appManager.FillScreenFromArray(runeArray)
 	}
 	appManager.Screen.Sync()
+	appManager.ScreenMutex.Unlock()
 }
 
 //GetScreenSize function
@@ -567,30 +582,212 @@ func (appManager *AppManager) GetScreenSize() (Integer, Integer) {
 
 //Tick function
 func (appManager *AppManager) Tick() {
-	appManager.Timer.Reset(1000 * time.Millisecond)
+	appManager.Timer.Reset(256 * time.Millisecond)
 	appManager.UI.InputWidget.Tick()
 	appManager.UpdateScreen()
 }
 
 //ResetTimer function
 func (appManager *AppManager) ResetTimer() {
-	appManager.Timer.Reset(1000 * time.Millisecond)
+	appManager.Timer.Reset(256 * time.Millisecond)
 	appManager.UI.InputWidget.shouldDrawIndex = true
 }
 
 //SetTimer function
 func (appManager *AppManager) SetTimer() {
-	appManager.Timer = time.NewTimer(1000 * time.Millisecond)
+	appManager.Timer = time.NewTimer(256 * time.Millisecond)
 	appManager.UI.InputWidget.shouldDrawIndex = true
 }
 
-//LogicLoop function
-func (appManager *AppManager) LogicLoop() {
+//AskServerOrClient function
+func (appManager *AppManager) AskServerOrClient() {
+	appManager.WriteEntry("Which network role dou you want to become(server/client)?")
+	appManager.UpdateScreen()
+a:
 	for {
 		select {
 		case command := <-appManager.CommandChannel:
 			//PrettyLog(fmt.Sprint("Tick at", t))
-			appManager.WriteEntry("Command received: " + string(command))
+			if strings.EqualFold(string(command), "server") {
+				appManager.WriteEntryAndUpdate("Ok, now you are a server")
+				appManager.Type = ServerApplication
+				break a
+			} else if strings.EqualFold(string(command), "client") {
+				appManager.WriteEntryAndUpdate("Ok, now you are a client")
+				appManager.Type = ClientApplication
+				break a
+			} else {
+				appManager.WriteEntryAndUpdate("Incorrect answer(" + string(command) + "), choose between: server/client, and try again")
+			}
+		}
+	}
+}
+
+//FindLocalIPs function
+func (appManager *AppManager) FindLocalIPs() {
+	ips := make([]net.IP, 0)
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		panic(err)
+	}
+	for _, i := range ifaces {
+		//appManager.WriteEntryAndUpdate(StructToJSONPretty(i))
+		addrs, err := i.Addrs()
+		if err != nil {
+			panic(err)
+		}
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+					ip = v.IP
+					ips = append(ips, ip)
+			case *net.IPAddr:
+					ip = v.IP
+					ips = append(ips, ip)
+			}
+		}
+	}
+	appManager.LocalIPs = ips
+}
+
+//AskForIP function
+func (appManager *AppManager) AskForIP() {
+	appManager.WriteEntryAndUpdate("Choose an address(type an index number):")
+	var index Integer
+	ips := appManager.LocalIPs
+	for index = 0; index < Integer(len(ips)); index++ {
+		appManager.WriteEntry(strconv.Itoa(int(index + 1)) + " " + string(tcell.RuneRArrow) + " " + ips[index].String())
+	}
+	appManager.UpdateScreen()
+a:
+	for {
+		select {
+		case command := <-appManager.CommandChannel:
+			//PrettyLog(fmt.Sprint("Tick at", t))
+			selectionInt, err := strconv.Atoi(string(command))
+			selection := Integer(selectionInt)
+			if err != nil {
+				appManager.WriteEntryAndUpdate("Type an index number")
+			} else {
+				if selection <= 0 {
+					appManager.WriteEntryAndUpdate("The index must be greater than 0")
+				} else if selection > Integer(len(ips)) {
+					appManager.WriteEntryAndUpdate("The index must be smaller than " + strconv.Itoa(len(ips) + 1))
+				} else {
+					appManager.ServerIP = ips[selection - 1]
+					appManager.WriteEntryAndUpdate("Great, you have choosen address " + 
+						appManager.ServerIP.String() + 
+						" at index " + 
+						strconv.Itoa(int(selection)))
+					break a
+				}
+			}
+			
+		}
+	}
+}
+
+//ListenForConnection function
+func (appManager *AppManager) ListenForConnection() {
+	var portInteger Integer
+a:
+	for portInteger = 2048; portInteger <= 32000; portInteger++ {
+		//timeout := time.Second
+		addressString := net.JoinHostPort(appManager.ServerIP.String(), strconv.Itoa(int(portInteger)))
+		appManager.WriteEntry(addressString)
+		listener, err := net.Listen("tcp", addressString)
+		if err != nil {
+			// handle error
+			appManager.WriteEntry(fmt.Sprint("Server error: ", err))
+		} else {
+			appManager.WriteEntry("Server at " + addressString)
+			connection, err := listener.Accept()
+			if err != nil {
+				appManager.WriteEntry(fmt.Sprint("tcp server accept error: ", err))
+			} else {
+				appManager.WriteEntry("Connection succesful")
+				appManager.WriteEntry(StructToJSONPretty(connection))
+				break a
+			}
+		}
+	}
+	appManager.UpdateScreen()
+}
+
+func (appManager *AppManager) DialServer() {
+	appManager.WriteEntryAndUpdate("Connecting to server address: " + appManager.ServerAddress)
+	connection, err := net.Dial("tcp", appManager.ServerAddress)
+	if err != nil {
+		appManager.WriteEntryAndUpdate(fmt.Sprint("Connection error: ", err))
+	} else {
+		appManager.WriteEntry("Connection succesful")
+		appManager.WriteEntryAndUpdate(StructToJSONPretty(connection))
+
+	}
+}
+
+func (appManager *AppManager) AskServerPort() {
+	appManager.WriteEntryAndUpdate("Enter the server port (integer between 2048 and 32000 inclusive):")
+a:
+	for {
+		select {
+		case command := <-appManager.CommandChannel:
+			//PrettyLog(fmt.Sprint("Tick at", t))
+			portString := string(command)
+			portInt, err := strconv.Atoi(portString)
+			if err != nil {
+				appManager.WriteEntryAndUpdate("Server port must be an integer between 2048 and 32000 ")
+			} else {
+				appManager.ServerPort = Integer(portInt)
+				if appManager.ServerPort < 2048 || appManager.ServerPort > 32000 {
+					appManager.WriteEntryAndUpdate("Server port must be an integer between 2048 and 32000 ")
+				} else {
+					appManager.ServerAddress = net.JoinHostPort(appManager.ServerIP.String(), portString)
+					appManager.DialServer()
+					break a
+				}
+			}
+		}
+	}
+}
+
+func (appManager *AppManager) ConnectToServer() {
+	appManager.WriteEntryAndUpdate("Enter a server IP address:")
+a:
+	for {
+		select {
+		case command := <-appManager.CommandChannel:
+			//PrettyLog(fmt.Sprint("Tick at", t))
+			ipString := string(command)
+			appManager.ServerIP = net.ParseIP(ipString)
+			if appManager.ServerIP == nil {
+				appManager.WriteEntryAndUpdate("Invalid server IP address, try again")
+			} else {
+				appManager.AskServerPort()
+				break a
+			}
+		}
+	}
+}
+
+//LogicLoop function
+func (appManager *AppManager) LogicLoop() {
+	appManager.AskServerOrClient()
+	//appManager.FindLocalAddress()
+	if appManager.Type == ServerApplication {
+		appManager.FindLocalIPs()
+		appManager.AskForIP()
+		appManager.ListenForConnection()
+	} else {
+		appManager.ConnectToServer()
+	}
+	
+	for {
+		select {
+		case command := <-appManager.CommandChannel:
+			//PrettyLog(fmt.Sprint("Tick at", t))
+			appManager.WriteEntryAndUpdate("Command received: " + string(command))
 		}
 	}
 }
@@ -609,6 +806,12 @@ func (appManager *AppManager) SendCommand(command []rune) {
 func (appManager *AppManager) SendCommandFromInput() {
 	appManager.SendCommand(appManager.UI.InputWidget.Line)
 	appManager.UI.InputWidget.Reset()
+}
+
+//WriteEntryAndUpdate function
+func (appManager *AppManager) WriteEntryAndUpdate(e string) {
+	appManager.WriteEntry(e)
+	appManager.UpdateScreen()
 }
 
 //WriteEntry function
@@ -684,7 +887,7 @@ loop:
 				appManager.UpdateScreen()
 			case tcell.KeyEnter:
 				appManager.ResetTimer()
-				appManager.WriteEntry("tcell.KeyEnter")
+				//appManager.WriteEntry("tcell.KeyEnter")
 				appManager.SendCommandFromInput()
 				appManager.UpdateScreen()
 
