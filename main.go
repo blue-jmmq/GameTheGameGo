@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gdamore/tcell"
+	"net"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
-	"strconv"
 	"time"
-	"net"
 )
 
 const (
@@ -25,21 +25,25 @@ type Integer int
 
 //StatisticsPerLevel structure
 type StatisticsPerLevel struct {
-	CostPerLevel      Integer
-	HealthPerLevel    Integer
-	RedArmorPerLever  Integer
-	BlueArmorPerLevel Integer
+	CostPerLevel       Integer
+	HealthPerLevel     Integer
+	RedArmorPerLever   Integer
+	BlueArmorPerLevel  Integer
+	RedDamagePerLever  Integer
+	BlueDamagePerLever Integer
+	HealingPerLever    Integer
 }
 
 //Card structure
 type Card struct {
-	Name               string
+	Name               []string
 	Cost               Integer
 	Health             Integer
 	RedArmor           Integer
 	BlueArmor          Integer
 	RedDamage          Integer
 	BlueDamage         Integer
+	Healing			   Integer
 	AntiAttackSpeed    Integer
 	Level              Integer
 	Experience         Integer
@@ -49,12 +53,13 @@ type Card struct {
 //NewWarriorCard creates a Warrior Card
 func NewWarriorCard() *Card {
 	return &Card{
-		Name:            "Warrior",
+		Name:            []string{"Guerrero", "Warrior"},
 		Cost:            1,
-		RedDamage:       1,
+		RedDamage:       4,
 		BlueDamage:      1,
-		RedArmor:        2,
-		BlueArmor:       1,
+		Healing:		 0,
+		RedArmor:        4,
+		BlueArmor:       2,
 		AntiAttackSpeed: 4,
 		Level:           1,
 		Experience:      0,
@@ -63,6 +68,209 @@ func NewWarriorCard() *Card {
 			HealthPerLevel:    1,
 			RedArmorPerLever:  2,
 			BlueArmorPerLevel: 1,
+			HealingPerLever: 0,
+			RedDamagePerLever: 2,
+			BlueDamagePerLever: 0,
+		},
+	}
+}
+
+//NewWarriorCard creates a Ninja Card
+func NewNinjaCard() *Card {
+	return &Card{
+		Name:            []string{"Ninja", "Ninja"},
+		Cost:            1,
+		RedDamage:       2,
+		BlueDamage:      1,
+		Healing:         0,
+		RedArmor:        1,
+		BlueArmor:       1,
+		AntiAttackSpeed: 1,
+		Level:           1,
+		Experience:      0,
+		StatisticsPerLevel: &StatisticsPerLevel{
+			CostPerLevel:      1,
+			HealthPerLevel:    1,
+			RedArmorPerLever:  2,
+			BlueArmorPerLevel: 1,
+			HealingPerLever: 0,
+			RedDamagePerLever: 1,
+			BlueDamagePerLever: 0,
+		},
+	}
+}
+
+//NewWarriorCard creates a Mage Card
+func NewMageCard() *Card {
+	return &Card{
+		Name:            []string{"Mago", "Mage"},
+		Cost:            1,
+		RedDamage:       1,
+		BlueDamage:      4,
+		Healing:         0,
+		RedArmor:        1,
+		BlueArmor:       4,
+		AntiAttackSpeed: 4,
+		Level:           1,
+		Experience:      0,
+		StatisticsPerLevel: &StatisticsPerLevel{
+			CostPerLevel:      1,
+			HealthPerLevel:    1,
+			RedArmorPerLever:  2,
+			BlueArmorPerLevel: 1,
+			HealingPerLever: 0,
+			RedDamagePerLever: 0,
+			BlueDamagePerLever: 3,
+		},
+	}
+}
+
+//NewWarriorCard creates a Ogre Card
+func NewOgreCard() *Card {
+	return &Card{
+		Name:            []string{"Ogro", "Ogre"},
+		Cost:            1,
+		RedDamage:       2,
+		BlueDamage:      0,
+		Healing:         0,
+		RedArmor:        8,
+		BlueArmor:       2,
+		AntiAttackSpeed: 4,
+		Level:           1,
+		Experience:      0,
+		StatisticsPerLevel: &StatisticsPerLevel{
+			CostPerLevel:      1,
+			HealthPerLevel:    1,
+			RedArmorPerLever:  4,
+			BlueArmorPerLevel: 2,
+			HealingPerLever: 0,
+			RedDamagePerLever: 1,
+			BlueDamagePerLever: 0,
+		},
+	}
+}
+
+//NewWarriorCard creates a Wizard elf Card
+func NewWizardElfCard() *Card {
+	return &Card{
+		Name:            []string{"Elfo Mago", "Wizard Elf"},
+		Cost:            1,
+		RedDamage:       1,
+		BlueDamage:      8,
+		Healing:         0,
+		RedArmor:        2,
+		BlueArmor:       3,
+		AntiAttackSpeed: 3,
+		Level:           1,
+		Experience:      0,
+		StatisticsPerLevel: &StatisticsPerLevel{
+			CostPerLevel:      1,
+			HealthPerLevel:    1,
+			RedArmorPerLever:  1,
+			BlueArmorPerLevel: 2,
+			HealingPerLever: 0,
+			RedDamagePerLever: 0,
+			BlueDamagePerLever: 2,
+		},
+	}
+}
+
+//NewWarriorCard creates a Archer Elf Card
+func NewArcherElfCard() *Card {
+	return &Card{
+		Name:            []string{"Elfo Arquero", "Archer Elf"},
+		Cost:            1,
+		RedDamage:       6,
+		BlueDamage:      1,
+		Healing:         0,
+		RedArmor:        1,
+		BlueArmor:       1,
+		AntiAttackSpeed: 2,
+		Level:           1,
+		Experience:      0,
+		StatisticsPerLevel: &StatisticsPerLevel{
+			CostPerLevel:      1,
+			HealthPerLevel:    1,
+			RedArmorPerLever:  1,
+			BlueArmorPerLevel: 1,
+			HealingPerLever: 0,
+			RedDamagePerLever: 3,
+			BlueDamagePerLever: 0,
+		},
+	}
+}
+
+//NewWarriorCard creates a Human archer Card
+func NewHumanArcherCard() *Card {
+	return &Card{
+		Name:            []string{"Arquero Aumano", "Human archer"},
+		Cost:            1,
+		RedDamage:       8,
+		BlueDamage:      1,
+		Healing:         0,
+		RedArmor:        2,
+		BlueArmor:       1,
+		AntiAttackSpeed: 3,
+		Level:           1,
+		Experience:      0,
+		StatisticsPerLevel: &StatisticsPerLevel{
+			CostPerLevel:      1,
+			HealthPerLevel:    1,
+			RedArmorPerLever:  2,
+			BlueArmorPerLevel: 1,
+			HealingPerLever: 0,
+			RedDamagePerLever: 2,
+			BlueDamagePerLever: 0,
+		},
+	}
+}
+
+//NewWarriorCard creates a Priest Card
+func NewPriestCard() *Card {
+	return &Card{
+		Name:            []string{"Sacerdote", "Priest"},
+		Cost:            1,
+		RedDamage:       0,
+		BlueDamage:      1,
+		Healing:         3,
+		RedArmor:        2,
+		BlueArmor:       1,
+		AntiAttackSpeed: 4,
+		Level:           1,
+		Experience:      0,
+		StatisticsPerLevel: &StatisticsPerLevel{
+			CostPerLevel:      1,
+			HealthPerLevel:    1,
+			RedArmorPerLever:  1,
+			BlueArmorPerLevel: 1,
+			HealingPerLever: 2,
+			RedDamagePerLever: 0,
+			BlueDamagePerLever: 0,
+		},
+	}
+}
+
+//NewWarriorCard creates a Warlock Card
+func NewWarlockCard() *Card {
+	return &Card{
+		Name:            []string{"Brujo", "Warlock"},
+		Cost:            1,
+		RedDamage:       1,
+		BlueDamage:      4,
+		Healing:         1,
+		RedArmor:        1,
+		BlueArmor:       1,
+		AntiAttackSpeed: 4,
+		Level:           1,
+		Experience:      0,
+		StatisticsPerLevel: &StatisticsPerLevel{
+			CostPerLevel:      1,
+			HealthPerLevel:    1,
+			RedArmorPerLever:  1,
+			BlueArmorPerLevel: 1,
+			HealingPerLever: 1,
+			RedDamagePerLever: 0,
+			BlueDamagePerLever: 2,
 		},
 	}
 }
@@ -231,6 +439,7 @@ func (bufferWidget *BufferWidget) GetFullVisualArray() [][]rune {
 	//PrettyLog(array)
 	return array
 }
+
 //GetVisualArray function
 func (bufferWidget *BufferWidget) GetVisualArray() [][]rune {
 	fullArray := bufferWidget.GetFullVisualArray()
@@ -259,7 +468,7 @@ func (bufferWidget *BufferWidget) GetDrawableLines(line []rune) [][]rune {
 			var drawableLine []rune
 			var dlIndex Integer
 			var initialIndex Integer
-	    	drawableLine = append(drawableLine, preLine...)
+			drawableLine = append(drawableLine, preLine...)
 			initialIndex = preLineSize
 		b:
 			for dlIndex = initialIndex; dlIndex < bufferWidget.Width; dlIndex++ {
@@ -489,10 +698,10 @@ func (ui *UI) Update(width, height Integer) {
 
 //AppManager structure
 type AppManager struct {
-	LocalIPs []net.IP
-	ServerIP net.IP
-	ServerPort Integer
-	ServerAddress string
+	LocalIPs       []net.IP
+	ServerIP       net.IP
+	ServerPort     Integer
+	ServerAddress  string
 	Type           Integer
 	UI             *UI
 	Screen         tcell.Screen
@@ -639,11 +848,11 @@ func (appManager *AppManager) FindLocalIPs() {
 			var ip net.IP
 			switch v := addr.(type) {
 			case *net.IPNet:
-					ip = v.IP
-					ips = append(ips, ip)
+				ip = v.IP
+				ips = append(ips, ip)
 			case *net.IPAddr:
-					ip = v.IP
-					ips = append(ips, ip)
+				ip = v.IP
+				ips = append(ips, ip)
 			}
 		}
 	}
@@ -656,7 +865,7 @@ func (appManager *AppManager) AskForIP() {
 	var index Integer
 	ips := appManager.LocalIPs
 	for index = 0; index < Integer(len(ips)); index++ {
-		appManager.WriteEntry(strconv.Itoa(int(index + 1)) + " " + string(tcell.RuneRArrow) + " " + ips[index].String())
+		appManager.WriteEntry(strconv.Itoa(int(index+1)) + " " + string(tcell.RuneRArrow) + " " + ips[index].String())
 	}
 	appManager.UpdateScreen()
 a:
@@ -672,17 +881,17 @@ a:
 				if selection <= 0 {
 					appManager.WriteEntryAndUpdate("The index must be greater than 0")
 				} else if selection > Integer(len(ips)) {
-					appManager.WriteEntryAndUpdate("The index must be smaller than " + strconv.Itoa(len(ips) + 1))
+					appManager.WriteEntryAndUpdate("The index must be smaller than " + strconv.Itoa(len(ips)+1))
 				} else {
-					appManager.ServerIP = ips[selection - 1]
-					appManager.WriteEntryAndUpdate("Great, you have choosen address " + 
-						appManager.ServerIP.String() + 
-						" at index " + 
+					appManager.ServerIP = ips[selection-1]
+					appManager.WriteEntryAndUpdate("Great, you have choosen address " +
+						appManager.ServerIP.String() +
+						" at index " +
 						strconv.Itoa(int(selection)))
 					break a
 				}
 			}
-			
+
 		}
 	}
 }
@@ -774,6 +983,7 @@ a:
 func (appManager *AppManager) LogicLoop() {
 	appManager.AskSoloOrMultiplayer()
 }
+
 //play multiplayer
 func (appManager *AppManager) PlayMultiplayer() {
 	appManager.AskServerOrClient()
@@ -786,36 +996,39 @@ func (appManager *AppManager) PlayMultiplayer() {
 		appManager.ConnectToServer()
 	}
 }
-func (appManager *AppManager) PlaySolo(){
+func (appManager *AppManager) PlaySolo() {
+
 }
-func (appManager *AppManager) AskSoloOrMultiplayer(){
+func (appManager *AppManager) AskSoloOrMultiplayer() {
 	appManager.WriteEntry("Escoje el modo de juego que quieres jugar ¿Multi-Jugador o de 1 jugador?")
 	appManager.WriteEntry("A) Multi-jugador")
 	appManager.WriteEntry("B) 1 Jugador")
-	a: 
-	for{
+a:
+	for {
 		command := appManager.ReadCommand()
-		commandString := string (command)
-		if strings.EqualFold(commandString, "a" ){
+		commandString := string(command)
+		if strings.EqualFold(commandString, "a") {
 			appManager.PlayMultiplayer()
 			break a
-		}else if strings.EqualFold(commandString, "b") { 
+		} else if strings.EqualFold(commandString, "b") {
 			appManager.PlaySolo()
 			break a
-		}else{
+		} else {
 			appManager.WriteEntry("Recuerda escribir una de las Opciones (A,B)")
 		}
 	}
-	
+
 }
+
 //strings.EqualFold
 func (appManager *AppManager) ReadCommand() []rune {
-	select{
-	case command := <- appManager.CommandChannel:
+	select {
+	case command := <-appManager.CommandChannel:
 		return command
-		
+
 	}
 }
+
 //SendCommand function
 func (appManager *AppManager) SendCommand(command []rune) {
 	if len(command) > 0 {
