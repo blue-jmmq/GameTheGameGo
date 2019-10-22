@@ -115,6 +115,11 @@ func (bufferWidget *BufferWidget) GetVisualArray() [][]rune {
 	return array
 }
 
+//AppendString function
+func (bufferWidget *BufferWidget) AppendString(s string) {
+	bufferWidget.Lines = append(bufferWidget.Lines, []rune(s))
+}
+
 //GetDrawableLines function
 func (bufferWidget *BufferWidget) GetDrawableLines(line []rune) [][]rune {
 	var drawableLines [][]rune
@@ -130,10 +135,12 @@ func (bufferWidget *BufferWidget) GetDrawableLines(line []rune) [][]rune {
 			var dlIndex Integer
 			var initialIndex Integer
 			if index > 0 {
-				initialIndex = 4
-				for n := 0; n < 4; n++ {
-					drawableLine = append(drawableLine, '→')
+				initialIndex = 3
+				for n := 0; n < 2; n++ {
+					drawableLine = append(drawableLine, ' ')
+
 				}
+				drawableLine = append(drawableLine, '→')
 			} else {
 				initialIndex = 0
 			}
@@ -219,35 +226,6 @@ func (inputWidget *InputWidget) GetVisualArray() [][]rune {
 	array = append(array, emptyRow2)
 
 	return array
-}
-
-//InputLineToVisualLine function
-func InputLineToVisualLine(line []rune, i0, width Integer) []rune {
-	var visualLine []rune
-	visualLine = append(visualLine, '█', '#', '⠀')
-	var nConstantChars Integer = 4
-	var nCharsAndBlanks Integer = width - nConstantChars
-	var nChars Integer
-	if Integer(len(line[i0:])) >= nCharsAndBlanks {
-		nChars = nCharsAndBlanks
-	} else {
-		nChars = Integer(len(line[i0:]))
-	}
-	var index Integer
-
-	for index = i0; index < nChars; index++ {
-		visualLine = append(visualLine, line[index])
-	}
-	for ; index < nCharsAndBlanks; index++ {
-		visualLine = append(visualLine, ' ')
-	}
-	visualLine = append(visualLine, '█')
-	return visualLine
-}
-
-//AppendString function
-func (bufferWidget *BufferWidget) AppendString(s string) {
-	bufferWidget.Lines = append(bufferWidget.Lines, []rune(s))
 }
 
 //UI structure
@@ -423,8 +401,20 @@ func NewUI(bufferWidget *BufferWidget, inputWidget *InputWidget, minimumWidth, m
 
 func main() {
 	bufferWidget := NewBufferWidget()
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
-	bufferWidget.AppendString("Hello world my name is PepeThePepe and this is GameTheGame")
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
+	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
+	bufferWidget.AppendString("Hello world my name is PepeThe and this is GameTheGame")
 	inputWidget := NewInputWidget()
 	ui := NewUI(bufferWidget, inputWidget, 16, 8)
 	//PrintStructPretty(bufferWidget)
