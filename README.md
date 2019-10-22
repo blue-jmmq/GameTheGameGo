@@ -1,3 +1,2 @@
 # GameTheGame
-Juego de batalla de cartas \n 
-Card battle game
+Juego de batalla de cartas - Card battle game
