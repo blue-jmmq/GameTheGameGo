@@ -1057,8 +1057,12 @@ func (appManager *AppManager) WriteEntry(e string) {
 	appManager.UI.BufferWidget.UpdateIndex()
 }
 
-//AppManagerLoop function
-func AppManagerLoop(ui *UI) {
+func NewAppManager() *AppManager {
+	var appManager AppManager
+	bufferWidget := NewBufferWidget()
+	inputWidget := NewInputWidget()
+	ui := NewUI(bufferWidget, inputWidget, 16, 8)
+	appManager.UI = ui
 	screen, err := tcell.NewScreen()
 	if err != nil {
 		panic(err)
@@ -1070,22 +1074,23 @@ func AppManagerLoop(ui *UI) {
 	Foreground(tcell.ColorBlack).
 	Background(tcell.ColorWhite))
 	*/
-	var appManager AppManager
 	appManager.Screen = screen
-	appManager.UI = ui
-	appManager.UpdateScreen()
-	appManager.SetTimer()
 	appManager.CommandChannel = make(chan []rune)
-	go func() {
-		for {
-			select {
-			case <-appManager.Timer.C:
-				//PrettyLog(fmt.Sprint("Tick at", t))
-				appManager.Tick()
-			}
+	return &appManager
+}
+
+func (appManager *AppManager) TimerLoop() {
+	appManager.SetTimer()
+	for {
+		select {
+		case <-appManager.Timer.C:
+			//PrettyLog(fmt.Sprint("Tick at", t))
+			appManager.Tick()
 		}
-	}()
-	go appManager.LogicLoop()
+	}
+}
+
+func (appManager *AppManager) EventLoop() {
 loop:
 	for {
 		event := appManager.Screen.PollEvent()
@@ -1136,7 +1141,16 @@ loop:
 			appManager.UpdateScreen()
 		}
 	}
-	screen.Fini()
+}
+
+
+//Execute function
+func (appManager *AppManager) Execute() {
+	appManager.UpdateScreen()
+	go appManager.TimerLoop()
+	go appManager.LogicLoop()
+	appManager.EventLoop()
+	appManager.Screen.Fini()
 }
 
 //RuneLinesToStringLines function
@@ -1159,10 +1173,6 @@ func NewUI(bufferWidget *BufferWidget, inputWidget *InputWidget, minimumWidth, m
 }
 
 func main() {
-	//PrettyLog(WarriorCard)
-	bufferWidget := NewBufferWidget()
-	inputWidget := NewInputWidget()
-	ui := NewUI(bufferWidget, inputWidget, 16, 8)
-	//PrintStructPretty(bufferWidget)
-	AppManagerLoop(ui)
+	appManager := NewAppManager()
+	appManager.Execute()
 }
