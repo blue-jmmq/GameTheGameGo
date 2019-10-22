@@ -231,12 +231,6 @@ func (bufferWidget *BufferWidget) GetFullVisualArray() [][]rune {
 	//PrettyLog(array)
 	return array
 }
-
-<<<<<<< HEAD
-//AppendString function
-func (bufferWidget *BufferWidget) AppendString(s string) {
-	bufferWidget.Lines = append(bufferWidget.Lines, []rune(s))
-=======
 //GetVisualArray function
 func (bufferWidget *BufferWidget) GetVisualArray() [][]rune {
 	fullArray := bufferWidget.GetFullVisualArray()
@@ -245,7 +239,6 @@ func (bufferWidget *BufferWidget) GetVisualArray() [][]rune {
 		return fullArray[bufferWidget.Index:]
 	}
 	return fullArray[bufferWidget.Index:topIndex]
->>>>>>> 44b50b7138f0750689799e94e940a95c532ba2fb
 }
 
 //GetDrawableLines function
@@ -266,21 +259,8 @@ func (bufferWidget *BufferWidget) GetDrawableLines(line []rune) [][]rune {
 			var drawableLine []rune
 			var dlIndex Integer
 			var initialIndex Integer
-<<<<<<< HEAD
-			if index > 0 {
-				initialIndex = 3
-				for n := 0; n < 2; n++ {
-					drawableLine = append(drawableLine, ' ')
-
-				}
-				drawableLine = append(drawableLine, '→')
-			} else {
-				initialIndex = 0
-			}
-=======
-			drawableLine = append(drawableLine, preLine...)
+	    	drawableLine = append(drawableLine, preLine...)
 			initialIndex = preLineSize
->>>>>>> 44b50b7138f0750689799e94e940a95c532ba2fb
 		b:
 			for dlIndex = initialIndex; dlIndex < bufferWidget.Width; dlIndex++ {
 				drawableLine = append(drawableLine, line[index])
@@ -474,14 +454,11 @@ func (inputWidget *InputWidget) GetVisualArray() [][]rune {
 	return array
 }
 
-<<<<<<< HEAD
-=======
 //AppendString function
 func (bufferWidget *BufferWidget) AppendString(s string) {
 	bufferWidget.Lines = append(bufferWidget.Lines, []rune(s))
 }
 
->>>>>>> 44b50b7138f0750689799e94e940a95c532ba2fb
 //UI structure
 type UI struct {
 	BufferWidget  *BufferWidget
@@ -795,6 +772,10 @@ a:
 
 //LogicLoop function
 func (appManager *AppManager) LogicLoop() {
+	appManager.AskSoloOrMultiplayer()
+}
+//play multiplayer
+func (appManager *AppManager) PlayMultiplayer() {
 	appManager.AskServerOrClient()
 	//appManager.FindLocalAddress()
 	if appManager.Type == ServerApplication {
@@ -804,16 +785,37 @@ func (appManager *AppManager) LogicLoop() {
 	} else {
 		appManager.ConnectToServer()
 	}
-	
-	for {
-		select {
-		case command := <-appManager.CommandChannel:
-			//PrettyLog(fmt.Sprint("Tick at", t))
-			appManager.WriteEntryAndUpdate("Command received: " + string(command))
+}
+func (appManager *AppManager) PlaySolo(){
+}
+func (appManager *AppManager) AskSoloOrMultiplayer(){
+	appManager.WriteEntry("Escoje el modo de juego que quieres jugar ¿Multi-Jugador o de 1 jugador?")
+	appManager.WriteEntry("A) Multi-jugador")
+	appManager.WriteEntry("B) 1 Jugador")
+	a: 
+	for{
+		command := appManager.ReadCommand()
+		commandString := string (command)
+		if strings.EqualFold(commandString, "a" ){
+			appManager.PlayMultiplayer()
+			break a
+		}else if strings.EqualFold(commandString, "b") { 
+			appManager.PlaySolo()
+			break a
+		}else{
+			appManager.WriteEntry("Recuerda escribir una de las Opciones (A,B)")
 		}
 	}
+	
 }
-
+//strings.EqualFold
+func (appManager *AppManager) ReadCommand() []rune {
+	select{
+	case command := <- appManager.CommandChannel:
+		return command
+		
+	}
+}
 //SendCommand function
 func (appManager *AppManager) SendCommand(command []rune) {
 	if len(command) > 0 {
@@ -946,26 +948,6 @@ func NewUI(bufferWidget *BufferWidget, inputWidget *InputWidget, minimumWidth, m
 func main() {
 	//PrettyLog(WarriorCard)
 	bufferWidget := NewBufferWidget()
-<<<<<<< HEAD
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo ")
-	bufferWidget.AppendString("Hello world my name is PepeThe and this is GameTheGame")
-=======
-	bufferWidget.AppendString("Hola mundo me llamo José Manuel Martínez Quevedo")
-	bufferWidget.AppendString("Hello world my name is PepeThePepe and this is GameTheGame")
-	bufferWidget.AppendString(StructToJSONPretty(NewWarriorCard()))
->>>>>>> 44b50b7138f0750689799e94e940a95c532ba2fb
 	inputWidget := NewInputWidget()
 	ui := NewUI(bufferWidget, inputWidget, 16, 8)
 	//PrintStructPretty(bufferWidget)
