@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-var GameCards map[string]Card = 
+
 
 const (
 	ServerApplication Integer = iota
@@ -38,7 +38,8 @@ type StatisticsPerLevel struct {
 
 //Card structure
 type Card struct {
-	Name               []string
+	Name               string
+	Descripción	string
 	Cost               Integer
 	Health             Integer
 	RedArmor           Integer
@@ -56,7 +57,8 @@ type Card struct {
 //NewWarriorCard creates a Warrior Card
 func NewWarriorCard() *Card {
 	return &Card{
-		Name:            []string{"Guerrero", "Warrior"},
+		Name:            "Guerrero",
+		Descripción: "Noble caballero de la Edad Media con sus armaduras y armas que se caracteriza por su resistencia y su ataque fisico",
 		Cost:            1,
 		RedDamage:       4,
 		BlueDamage:      1,
@@ -82,7 +84,8 @@ func NewWarriorCard() *Card {
 //NewWarriorCard creates a Ninja Card
 func NewNinjaCard() *Card {
 	return &Card{
-		Name:            []string{"Ninja", "Ninja"},
+		Name:            "Ninja",
+		Descripción: "Ninja es considerado un mercenario tipo de guerrero japonés contratado para ejercer asesinatos caracterizado por su gran rapidez, su daño fisico y pobre defensa",
 		Cost:            1,
 		RedDamage:       2,
 		BlueDamage:      1,
@@ -108,7 +111,8 @@ func NewNinjaCard() *Card {
 //NewWarriorCard creates a Mage Card
 func NewMageCard() *Card {
 	return &Card{
-		Name:            []string{"Mago", "Mage"},
+		Name:            "Mago",
+		Descripción: 	"Considerados por muchos como un hechiceros especializados en la magia y el conosimiento mistico Caracterizados por su daño magico y defensa magica",
 		Cost:            1,
 		RedDamage:       1,
 		BlueDamage:      4,
@@ -134,7 +138,8 @@ func NewMageCard() *Card {
 //NewWarriorCard creates a Ogre Card
 func NewOgreCard() *Card {
 	return &Card{
-		Name:            []string{"Ogro", "Ogre"},
+		Name:            "Ogro",
+		Descripción: "Un ogro es el miembro de una raza de humanoides grandes, fieros y crueles que comen carne humana",
 		Cost:            1,
 		RedDamage:       2,
 		BlueDamage:      0,
@@ -142,7 +147,7 @@ func NewOgreCard() *Card {
 		RedArmor:        8,
 		BlueArmor:       2,
 		AntiAttackSpeed: 4,
-		Range 1,
+		Range: 1,
 		Level:           1,
 		Experience:      0,
 		StatisticsPerLevel: &StatisticsPerLevel{
@@ -160,7 +165,8 @@ func NewOgreCard() *Card {
 //NewWarriorCard creates a Wizard elf Card
 func NewWizardElfCard() *Card {
 	return &Card{
-		Name:            []string{"Elfo Mago", "Wizard Elf"},
+		Name:            "Elfo Mago",
+		Descripción: 	"Misteriosos hasta para los otros miembros de clan elfico, usando su magia para llegar hasta donde los otros elfos no han llegado",
 		Cost:            1,
 		RedDamage:       1,
 		BlueDamage:      8,
@@ -184,9 +190,10 @@ func NewWizardElfCard() *Card {
 }
 
 //NewWarriorCard creates a Archer Elf Card
-func NewArcherElfCard() *Card {
+func CrearCartaDeElfoArquero() *Card {
 	return &Card{
-		Name:            []string{"Elfo Arquero", "Archer Elf"},
+		Name:            "Elfo Arquero",
+		Descripción: 	"Guerros del clan elfico que aprovecha las magia para sus ataques de larga distancia y portar un arco elfico con encantamientos de daño",
 		Cost:            1,
 		RedDamage:       6,
 		BlueDamage:      1,
@@ -194,6 +201,7 @@ func NewArcherElfCard() *Card {
 		RedArmor:        1,
 		BlueArmor:       1,
 		AntiAttackSpeed: 2,
+		Range: 7,
 		Level:           1,
 		Experience:      0,
 		StatisticsPerLevel: &StatisticsPerLevel{
@@ -211,7 +219,8 @@ func NewArcherElfCard() *Card {
 //NewWarriorCard creates a Human archer Card
 func NewHumanArcherCard() *Card {
 	return &Card{
-		Name:            []string{"Arquero Aumano", "Human archer"},
+		Name:            "Arquero Aumano",
+		Descripción: 	"Humanos del antiguo clan de los Exiliados que disfrutanban llevar a la locura a sus victimas disparandoles flechzas hasta asesinarlos",
 		Cost:            1,
 		RedDamage:       8,
 		BlueDamage:      1,
@@ -219,6 +228,7 @@ func NewHumanArcherCard() *Card {
 		RedArmor:        2,
 		BlueArmor:       1,
 		AntiAttackSpeed: 3,
+		Range: 6,
 		Level:           1,
 		Experience:      0,
 		StatisticsPerLevel: &StatisticsPerLevel{
@@ -236,7 +246,8 @@ func NewHumanArcherCard() *Card {
 //NewWarriorCard creates a Priest Card
 func NewPriestCard() *Card {
 	return &Card{
-		Name:            []string{"Sacerdote", "Priest"},
+		Name:            "Sacerdote",
+		Descripción:	"Los sacerdotes están entregados a lo espiritual sirviendo a la gente con su inquebrantable fe y sus dones místicos dedicados a sanar a sus compañeros en la guerra",
 		Cost:            1,
 		RedDamage:       0,
 		BlueDamage:      1,
@@ -244,6 +255,7 @@ func NewPriestCard() *Card {
 		RedArmor:        2,
 		BlueArmor:       1,
 		AntiAttackSpeed: 4,
+		Range: 4,
 		Level:           1,
 		Experience:      0,
 		StatisticsPerLevel: &StatisticsPerLevel{
@@ -261,7 +273,8 @@ func NewPriestCard() *Card {
 //NewWarriorCard creates a Warlock Card
 func NewWarlockCard() *Card {
 	return &Card{
-		Name:            []string{"Brujo", "Warlock"},
+		Name:            "Brujo",
+		Descripción: "Los brujos son entrenados en las artes oscuras estos letales hechiceros usan su magia para ejercer dominacion sobre sus enemigos",
 		Cost:            1,
 		RedDamage:       1,
 		BlueDamage:      4,
@@ -269,6 +282,7 @@ func NewWarlockCard() *Card {
 		RedArmor:        1,
 		BlueArmor:       1,
 		AntiAttackSpeed: 4,
+		Range: 3,
 		Level:           1,
 		Experience:      0,
 		StatisticsPerLevel: &StatisticsPerLevel{
@@ -282,7 +296,31 @@ func NewWarlockCard() *Card {
 		},
 	}
 }
-
+//Interfaz de Cartas
+type InterfazDeCarta struct {
+	Nombre string
+	Costo Integer
+	Descripción string
+}
+func (carta *Card)ObtenerInterfaz() *InterfazDeCarta{
+	var interfaz InterfazDeCarta
+	interfaz.Nombre= carta.Name
+	interfaz.Costo= carta.Cost
+	interfaz.Descripción= carta.Descripción
+	return &interfaz	
+}
+//Arreglo de Cartas
+var ArregloDeCartas []*Card = []*Card{
+	NewWarriorCard(), 
+	NewNinjaCard(),
+	NewMageCard(),
+	NewOgreCard(),
+	NewWizardElfCard(),
+	CrearCartaDeElfoArquero(),
+	NewHumanArcherCard(),
+	NewPriestCard(),
+	NewWarlockCard(),
+}
 //Player structure
 type Player struct {
 	Health   Integer
@@ -1005,8 +1043,15 @@ func (appManager *AppManager) PlayMultiplayer() {
 	}
 }
 func (appManager *AppManager) PlaySolo() {
+	appManager.WriteEntry("Escoje cuatro cartas para tu mano inicial")
+	for i:=0; i<len(ArregloDeCartas);i++{
+		appManager.WriteEntry(StructToJSONPretty(ArregloDeCartas[i].ObtenerInterfaz()))
 
+	}
+	appManager.UpdateScreen()
 }
+
+
 func (appManager *AppManager) AskSoloOrMultiplayer() {
 	appManager.WriteEntry("Escoje el modo de juego que quieres jugar ¿Multi-Jugador o de 1 jugador?")
 	appManager.WriteEntry("A) Multi-jugador")
