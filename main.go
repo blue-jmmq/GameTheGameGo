@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+var GameCards map[string]Card = 
+
 const (
 	ServerApplication Integer = iota
 	ClientApplication
@@ -45,6 +47,7 @@ type Card struct {
 	BlueDamage         Integer
 	Healing			   Integer
 	AntiAttackSpeed    Integer
+	Range Integer
 	Level              Integer
 	Experience         Integer
 	StatisticsPerLevel *StatisticsPerLevel
@@ -61,6 +64,7 @@ func NewWarriorCard() *Card {
 		RedArmor:        4,
 		BlueArmor:       2,
 		AntiAttackSpeed: 4,
+		Range: 1,
 		Level:           1,
 		Experience:      0,
 		StatisticsPerLevel: &StatisticsPerLevel{
@@ -86,6 +90,7 @@ func NewNinjaCard() *Card {
 		RedArmor:        1,
 		BlueArmor:       1,
 		AntiAttackSpeed: 1,
+		Range: 1,
 		Level:           1,
 		Experience:      0,
 		StatisticsPerLevel: &StatisticsPerLevel{
@@ -111,6 +116,7 @@ func NewMageCard() *Card {
 		RedArmor:        1,
 		BlueArmor:       4,
 		AntiAttackSpeed: 4,
+		Range: 3,
 		Level:           1,
 		Experience:      0,
 		StatisticsPerLevel: &StatisticsPerLevel{
@@ -136,6 +142,7 @@ func NewOgreCard() *Card {
 		RedArmor:        8,
 		BlueArmor:       2,
 		AntiAttackSpeed: 4,
+		Range 1,
 		Level:           1,
 		Experience:      0,
 		StatisticsPerLevel: &StatisticsPerLevel{
@@ -161,6 +168,7 @@ func NewWizardElfCard() *Card {
 		RedArmor:        2,
 		BlueArmor:       3,
 		AntiAttackSpeed: 3,
+		Range: 8,
 		Level:           1,
 		Experience:      0,
 		StatisticsPerLevel: &StatisticsPerLevel{
