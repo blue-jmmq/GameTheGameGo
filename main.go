@@ -1045,7 +1045,8 @@ func (appManager *AppManager) PlayMultiplayer() {
 func (appManager *AppManager) PlaySolo() {
 	appManager.WriteEntry("Escoje cuatro cartas para tu mano inicial")
 	for i:=0; i<len(ArregloDeCartas);i++{
-		appManager.WriteEntry(StructToJSONPretty(ArregloDeCartas[i].ObtenerInterfaz()))
+		
+		appManager.WriteEntry(strconv.Itoa(i+1)+")\n"+StructToJSONPretty(ArregloDeCartas[i].ObtenerInterfaz()))
 
 	}
 	appManager.UpdateScreen()
